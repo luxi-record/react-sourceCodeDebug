@@ -131,6 +131,8 @@ ReactDOMHydrationRoot.prototype.render = ReactDOMRoot.prototype.render = functio
       }
     }
   }
+  
+  console.log(children, 'log: ReactDOMRoot.prototype.render   child，创建完root和hostroot后render调用updateContainer(children, root, null, null)')
   updateContainer(children, root, null, null);
 };
 
@@ -167,6 +169,8 @@ export function createRoot(
   container: Element | DocumentFragment,
   options?: CreateRootOptions,
 ): RootType {
+  console.error('step 2 createRoot调用createContainer创建root')
+  // 校验container是否有效
   if (!isValidContainer(container)) {
     throw new Error('createRoot(...): Target container is not a DOM element.');
   }
@@ -178,7 +182,7 @@ export function createRoot(
   let identifierPrefix = '';
   let onRecoverableError = defaultOnRecoverableError;
   let transitionCallbacks = null;
-
+  // 第二个参数不为空
   if (options !== null && options !== undefined) {
     if (__DEV__) {
       if ((options: any).hydrate) {
@@ -232,11 +236,13 @@ export function createRoot(
     transitionCallbacks,
   );
   markContainerAsRoot(root.current, container);
-
   const rootContainerElement: Document | Element | DocumentFragment =
     container.nodeType === COMMENT_NODE
       ? (container.parentNode: any)
       : container;
+  //事件绑定
+  console.log('react会把所有事件绑定到root上面，并且定义一个map映射表，把原生事件和react事件相对应，当触发一个事件的时候react会从触发的target向上到root收集相同react事件，放在一个listenrs数组中，事件监听函数是通过优先级封装了一层，不同事件对应不同优先级，也对应着不同的事件对象syntheticBaseEvent')
+  console.log('通过batchUpdate触发事件')
   listenToAllSupportedEvents(rootContainerElement);
 
   return new ReactDOMRoot(root);

@@ -364,7 +364,7 @@ function areHookInputsEqual(
   }
   return true;
 }
-
+//函数组件更新和渲染都走这里
 export function renderWithHooks<Props, SecondArg>(
   current: Fiber | null,
   workInProgress: Fiber,
@@ -375,7 +375,6 @@ export function renderWithHooks<Props, SecondArg>(
 ): any {
   renderLanes = nextRenderLanes;
   currentlyRenderingFiber = workInProgress;
-
   if (__DEV__) {
     hookTypesDev =
       current !== null
@@ -481,7 +480,6 @@ export function renderWithHooks<Props, SecondArg>(
   // hookTypesDev could catch more cases (e.g. context) but only in DEV bundles.
   const didRenderTooFewHooks =
     currentHook !== null && currentHook.next !== null;
-
   renderLanes = NoLanes;
   currentlyRenderingFiber = (null: any);
 
@@ -546,6 +544,7 @@ export function renderWithHooks<Props, SecondArg>(
       }
     }
   }
+  console.log(current, workInProgress, ReactCurrentDispatcher, nextRenderLanes,children, 'log: renderWithHooks cur wor dis lan child' )
   return children;
 }
 
@@ -637,7 +636,6 @@ function mountWorkInProgressHook(): Hook {
 
     next: null,
   };
-
   if (workInProgressHook === null) {
     // This is the first hook in the list
     currentlyRenderingFiber.memoizedState = workInProgressHook = hook;
@@ -1497,7 +1495,7 @@ function checkIfSnapshotChanged(inst) {
 function forceStoreRerender(fiber) {
   scheduleUpdateOnFiber(fiber, SyncLane, NoTimestamp);
 }
-
+// 初次渲染调用的usestate
 function mountState<S>(
   initialState: (() => S) | S,
 ): [S, Dispatch<BasicStateAction<S>>] {
@@ -1662,7 +1660,9 @@ function updateRef<T>(initialValue: T): {|current: T|} {
 
 function mountEffectImpl(fiberFlags, hookFlags, create, deps): void {
   const hook = mountWorkInProgressHook();
+  console.log(hook, 'log： 初次执行useeffect时候，会创建hooks和之前的hooks连接起来，如果当前fiber的updateQueue为空的话就会为其创建一个updatequeue，然后再创建一个effect一个环状链表每个useEffect都会和之前的形成一个环，并把effect挂载在更新队列的lasteffect上')
   const nextDeps = deps === undefined ? null : deps;
+  //给当前fiber打上一个flags
   currentlyRenderingFiber.flags |= fiberFlags;
   hook.memoizedState = pushEffect(
     HookHasEffect | hookFlags,
@@ -1698,7 +1698,7 @@ function updateEffectImpl(fiberFlags, hookFlags, create, deps): void {
     nextDeps,
   );
 }
-
+// 初次渲染时候的effect
 function mountEffect(
   create: () => (() => void) | void,
   deps: Array<mixed> | void | null,
@@ -2195,7 +2195,7 @@ function dispatchReducerAction<S, A>(
 
   markUpdateInDevTools(fiber, lane, action);
 }
-
+// 触发setstate时候调用
 function dispatchSetState<S, A>(
   fiber: Fiber,
   queue: UpdateQueue<S, A>,
@@ -2210,7 +2210,7 @@ function dispatchSetState<S, A>(
       );
     }
   }
-
+  console.log('log: dispatchSetState 触发setstate')
   const lane = requestUpdateLane(fiber);
 
   const update: Update<S, A> = {
@@ -2220,7 +2220,6 @@ function dispatchSetState<S, A>(
     eagerState: null,
     next: (null: any),
   };
-
   if (isRenderPhaseUpdate(fiber)) {
     enqueueRenderPhaseUpdate(queue, update);
   } else {
@@ -2271,6 +2270,7 @@ function dispatchSetState<S, A>(
     if (root !== null) {
       entangleTransitionUpdate(root, queue, lane);
     }
+    console.log(fiber, lane, eventTime, root, 'log: dispatchSetState触发结束 fib lane time root')
   }
 
   markUpdateInDevTools(fiber, lane, action);
@@ -2302,7 +2302,7 @@ function enqueueRenderPhaseUpdate<S, A>(
   }
   queue.pending = update;
 }
-
+// 生成任务环状链表
 function enqueueUpdate<S, A>(
   fiber: Fiber,
   queue: UpdateQueue<S, A>,
@@ -2423,7 +2423,7 @@ if (enableCache) {
   (ContextOnlyDispatcher: Dispatcher).getCacheForType = getCacheForType;
   (ContextOnlyDispatcher: Dispatcher).useCacheRefresh = throwInvalidHookError;
 }
-
+//渲染的hooks
 const HooksDispatcherOnMount: Dispatcher = {
   readContext,
 
@@ -2451,6 +2451,7 @@ if (enableCache) {
   (HooksDispatcherOnMount: Dispatcher).getCacheForType = getCacheForType;
   (HooksDispatcherOnMount: Dispatcher).useCacheRefresh = mountRefresh;
 }
+//更新时候的hooks
 const HooksDispatcherOnUpdate: Dispatcher = {
   readContext,
 

@@ -386,7 +386,7 @@ function computeExpirationTime(lane: Lane, currentTime: number) {
   }
 }
 
-export function markStarvedLanesAsExpired(
+export function markStarvedLanesAsExpired(// 计算当前任务过期时间，避免饿死
   root: FiberRoot,
   currentTime: number,
 ): void {

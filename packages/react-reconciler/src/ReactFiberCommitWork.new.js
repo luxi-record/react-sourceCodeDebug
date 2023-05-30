@@ -321,7 +321,7 @@ function safelyCallDestroy(
 let focusedInstanceHandle: null | Fiber = null;
 let shouldFireAfterActiveInstanceBlur: boolean = false;
 
-export function commitBeforeMutationEffects(
+export function commitBeforeMutationEffects(// dom改变之前
   root: FiberRoot,
   firstChild: Fiber,
 ) {
@@ -363,7 +363,7 @@ function commitBeforeMutationEffects_begin() {
       ensureCorrectReturnPointer(child, fiber);
       nextEffect = child;
     } else {
-      commitBeforeMutationEffects_complete();
+      commitBeforeMutationEffects_complete();// 在dom改变之前进入函数处理
     }
   }
 }
@@ -373,7 +373,7 @@ function commitBeforeMutationEffects_complete() {
     const fiber = nextEffect;
     setCurrentDebugFiberInDEV(fiber);
     try {
-      commitBeforeMutationEffectsOnFiber(fiber);
+      commitBeforeMutationEffectsOnFiber(fiber);//
     } catch (error) {
       reportUncaughtErrorInDEV(error);
       captureCommitPhaseError(fiber, fiber.return, error);
@@ -391,7 +391,7 @@ function commitBeforeMutationEffects_complete() {
   }
 }
 
-function commitBeforeMutationEffectsOnFiber(finishedWork: Fiber) {
+function commitBeforeMutationEffectsOnFiber(finishedWork: Fiber) {// 主要针对类组件和hostroot做处理
   const current = finishedWork.alternate;
   const flags = finishedWork.flags;
 
@@ -2854,6 +2854,7 @@ function commitPassiveUnmountEffects_begin() {
     } else {
       commitPassiveUnmountEffects_complete();
     }
+
   }
 }
 

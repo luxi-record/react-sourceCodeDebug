@@ -163,6 +163,7 @@ function extractEvents(
     enableCreateEventHandleAPI &&
     eventSystemFlags & IS_EVENT_HANDLE_NON_MANAGED_NODE
   ) {
+    //收集事件
     const listeners = accumulateEventHandleNonManagedNodeListeners(
       // TODO: this cast may not make sense for events like
       // "focus" where React listens to e.g. "focusin".
@@ -193,7 +194,7 @@ function extractEvents(
       // Then we can remove this special list.
       // This is a breaking change that can wait until React 18.
       domEventName === 'scroll';
-
+    // 收集事件
     const listeners = accumulateSinglePhaseListeners(
       targetInst,
       reactName,

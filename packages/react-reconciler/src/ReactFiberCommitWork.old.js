@@ -320,7 +320,7 @@ function safelyCallDestroy(
 
 let focusedInstanceHandle: null | Fiber = null;
 let shouldFireAfterActiveInstanceBlur: boolean = false;
-
+// commit突变之前的入口函数
 export function commitBeforeMutationEffects(
   root: FiberRoot,
   firstChild: Fiber,
@@ -363,6 +363,7 @@ function commitBeforeMutationEffects_begin() {
       ensureCorrectReturnPointer(child, fiber);
       nextEffect = child;
     } else {
+      // 一般除了原生dom节点fiberRoot和hostRoot，都会走到这里
       commitBeforeMutationEffects_complete();
     }
   }
@@ -373,6 +374,7 @@ function commitBeforeMutationEffects_complete() {
     const fiber = nextEffect;
     setCurrentDebugFiberInDEV(fiber);
     try {
+      // commit 在突变之前的阶段真正执行的函数
       commitBeforeMutationEffectsOnFiber(fiber);
     } catch (error) {
       reportUncaughtErrorInDEV(error);
@@ -409,7 +411,7 @@ function commitBeforeMutationEffectsOnFiber(finishedWork: Fiber) {
       }
     }
   }
-
+  // 只处理带Snapshot的flags的fiber
   if ((flags & Snapshot) !== NoFlags) {
     setCurrentDebugFiberInDEV(finishedWork);
 
@@ -478,6 +480,7 @@ function commitBeforeMutationEffectsOnFiber(finishedWork: Fiber) {
       case HostRoot: {
         if (supportsMutation) {
           const root = finishedWork.stateNode;
+          // hostRoot清除#root内容
           clearContainer(root.containerInfo);
         }
         break;
@@ -512,7 +515,7 @@ function commitBeforeMutationEffectsDeletion(deletion: Fiber) {
     }
   }
 }
-
+// 渲染阶段都会先执行下effect的destroy函数
 function commitHookEffectListUnmount(
   flags: HookFlags,
   finishedWork: Fiber,
@@ -1620,7 +1623,7 @@ function commitPlacement(finishedWork: Fiber): void {
       );
   }
 }
-
+// 插入元素包括它的sibling，如果是react节点则插入该节点的child也就是原生dom节点
 function insertOrAppendPlacementNodeIntoContainer(
   node: Fiber,
   before: ?Instance,
@@ -1860,6 +1863,7 @@ function commitWork(current: Fiber | null, finishedWork: Fiber): void {
         ) {
           try {
             startLayoutEffectTimer();
+            // 这里执行的是layouteffect
             commitHookEffectListUnmount(
               HookLayout | HookHasEffect,
               finishedWork,
@@ -2188,16 +2192,18 @@ function commitMutationEffects_begin(root: FiberRoot, lanes: Lanes) {
       ensureCorrectReturnPointer(child, fiber);
       nextEffect = child;
     } else {
+      // 执行dom突变一般也是除了原生节点和fiberRoot或hostRoot才会执行
       commitMutationEffects_complete(root, lanes);
     }
   }
 }
-
+// 
 function commitMutationEffects_complete(root: FiberRoot, lanes: Lanes) {
   while (nextEffect !== null) {
     const fiber = nextEffect;
     setCurrentDebugFiberInDEV(fiber);
     try {
+      // commit突变时候真正执行函数
       commitMutationEffectsOnFiber(fiber, root, lanes);
     } catch (error) {
       reportUncaughtErrorInDEV(error);
@@ -2215,7 +2221,7 @@ function commitMutationEffects_complete(root: FiberRoot, lanes: Lanes) {
     nextEffect = fiber.return;
   }
 }
-
+// 这里是执行dom突变的主要函数会根据fiber的flags进行不同的处理
 function commitMutationEffectsOnFiber(
   finishedWork: Fiber,
   root: FiberRoot,
@@ -2349,6 +2355,7 @@ export function commitLayoutEffects(
   root: FiberRoot,
   committedLanes: Lanes,
 ): void {
+  console.log('log: commitLayoutEffects layouteffect副作用函数是在commit阶段同步执行的，而useeffect副作用函数是通过ensureRootIsScheduled调度执行, 副作用函数都是在dom突变之后执行')
   inProgressLanes = committedLanes;
   inProgressRoot = root;
   nextEffect = finishedWork;
@@ -2444,6 +2451,7 @@ function commitLayoutMountEffects_complete(
       const current = fiber.alternate;
       setCurrentDebugFiberInDEV(fiber);
       try {
+        // 先执行layouteffect副作用函数
         commitLayoutEffectOnFiber(root, current, fiber, committedLanes);
       } catch (error) {
         reportUncaughtErrorInDEV(error);

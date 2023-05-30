@@ -129,6 +129,7 @@ function advanceTimers(currentTime) {
 
 function handleTimeout(currentTime) {
   isHostTimeoutScheduled = false;
+  // 检查timerqueue中是否有过期任务有就加入taskqueue
   advanceTimers(currentTime);
 
   if (!isHostCallbackScheduled) {
@@ -143,7 +144,7 @@ function handleTimeout(currentTime) {
     }
   }
 }
-
+//
 function flushWork(hasTimeRemaining, initialTime) {
   if (enableProfiling) {
     markSchedulerUnsuspended(initialTime);
@@ -186,8 +187,9 @@ function flushWork(hasTimeRemaining, initialTime) {
   }
 }
 
-function workLoop(hasTimeRemaining, initialTime) {
+function workLoop(hasTimeRemaining, initialTime) { // 调度时候执行的work
   let currentTime = initialTime;
+  //检查是否有过期任务需要添加到taskQueue中执行的
   advanceTimers(currentTime);
   currentTask = peek(taskQueue);
   while (
@@ -197,8 +199,10 @@ function workLoop(hasTimeRemaining, initialTime) {
     if (
       currentTask.expirationTime > currentTime &&
       (!hasTimeRemaining || shouldYieldToHost())
+      //执行中会根据当前任务执行的时间是否超过一帧渲染的时间和用户是否与界面有交互来判断是否应该中断当前任务
     ) {
       // This currentTask hasn't expired, and we've reached the deadline.
+      // 用过期时间和当前时间比较，没过期就跳出
       break;
     }
     const callback = currentTask.callback;
@@ -209,16 +213,17 @@ function workLoop(hasTimeRemaining, initialTime) {
       if (enableProfiling) {
         markTaskRun(currentTask, currentTime);
       }
-      const continuationCallback = callback(didUserCallbackTimeout);
+      const continuationCallback = callback(didUserCallbackTimeout);// 这里就是react中performConcurrentWorkOnRoot函数的返回值
       currentTime = getCurrentTime();
       if (typeof continuationCallback === 'function') {
+        // 这里表示任务没完成被中断了，则将返回的函数作为新的回调在下一次循环执行
         currentTask.callback = continuationCallback;
         if (enableProfiling) {
-          markTaskYield(currentTask, currentTime);
+          markTaskYield(currentTask, currentTime);// 标志当前任务被中断
         }
       } else {
         if (enableProfiling) {
-          markTaskCompleted(currentTask, currentTime);
+          markTaskCompleted(currentTask, currentTime);// 标志任务完成
           currentTask.isQueued = false;
         }
         if (currentTask === peek(taskQueue)) {
@@ -227,14 +232,16 @@ function workLoop(hasTimeRemaining, initialTime) {
       }
       advanceTimers(currentTime);
     } else {
-      pop(taskQueue);
+      pop(taskQueue);//执行完的task会被删除，没执行完的不会被删除
     }
     currentTask = peek(taskQueue);
   }
   // Return whether there's additional work
   if (currentTask !== null) {
+    // 表示taskqueue没执行完，在performWorkUntilDeadline会继续发起调度
     return true;
   } else {
+    // taskqueue执行完了，则会通过settimeout的方式调度执行timerqueue
     const firstTimer = peek(timerQueue);
     if (firstTimer !== null) {
       requestHostTimeout(handleTimeout, firstTimer.startTime - currentTime);
@@ -305,9 +312,9 @@ function unstable_wrapCallback(callback) {
   };
 }
 
-function unstable_scheduleCallback(priorityLevel, callback, options) {
+function unstable_scheduleCallback(priorityLevel, callback, options) { //这个函数是和react连接的桥梁                                                            //react请求调度执行performconcurrentworkonRoot
+  console.log(priorityLevel, callback.name, 'log: unstable_scheduleCallback 请求调度的请求优先级,0代表nolan,1代表立刻,2代表用户操作的,3代表普通(初次渲染这些)')
   var currentTime = getCurrentTime();
-
   var startTime;
   if (typeof options === 'object' && options !== null) {
     var delay = options.delay;
@@ -319,13 +326,12 @@ function unstable_scheduleCallback(priorityLevel, callback, options) {
   } else {
     startTime = currentTime;
   }
-
   var timeout;
   switch (priorityLevel) {
-    case ImmediatePriority:
+    case ImmediatePriority: // 1最高优先级
       timeout = IMMEDIATE_PRIORITY_TIMEOUT;
       break;
-    case UserBlockingPriority:
+    case UserBlockingPriority: // 2 用户行为优先级
       timeout = USER_BLOCKING_PRIORITY_TIMEOUT;
       break;
     case IdlePriority:
@@ -334,31 +340,38 @@ function unstable_scheduleCallback(priorityLevel, callback, options) {
     case LowPriority:
       timeout = LOW_PRIORITY_TIMEOUT;
       break;
-    case NormalPriority:
+    case NormalPriority: // 3 普通优先级，初次渲染这些
     default:
       timeout = NORMAL_PRIORITY_TIMEOUT;
       break;
   }
+  var expirationTime = startTime + timeout; // 任务过期时间，根据优先级和当前时间以及开始时间算出
 
-  var expirationTime = startTime + timeout;
-
-  var newTask = {
+  var newTask = { // 以react的perform事件创建一个新任务task
     id: taskIdCounter++,
-    callback,
+    callback, // callback = performConcurrentWorkOnRoot
     priorityLevel,
     startTime,
     expirationTime,
     sortIndex: -1,
   };
-  if (enableProfiling) {
+  if (enableProfiling) {// 初始为false
     newTask.isQueued = false;
   }
 
+  //scheduler有两个任务队列：timerQueue 和 taskQueue
+  //timerQueue中存放延时任务，也就是未过期的任务
+  //taskQueue中存放的是过期任务，也就是需要立即执行的任务
+  //timerQueue 和 taskQueue是一个最小堆的数据结构
+  //对任务开始时间与当前时间进行比较
+  //任务开始时间大于当前时间，表示当前任务是一个延时任务
   if (startTime > currentTime) {
     // This is a delayed task.
+    // 延时任务
     newTask.sortIndex = startTime;
     push(timerQueue, newTask);
     if (peek(taskQueue) === null && newTask === peek(timerQueue)) {
+      // 如果过期任务全部执行完了，并且当前延时任务是最早的任务就会创建一个settimeout，在创建之前会去检查是否有之前的调度，有的话就暂停
       // All tasks are delayed, and this is the task with the earliest delay.
       if (isHostTimeoutScheduled) {
         // Cancel an existing timeout.
@@ -367,18 +380,21 @@ function unstable_scheduleCallback(priorityLevel, callback, options) {
         isHostTimeoutScheduled = true;
       }
       // Schedule a timeout.
+      // requestHostTimeout就是一个settimeout
       requestHostTimeout(handleTimeout, startTime - currentTime);
     }
   } else {
     newTask.sortIndex = expirationTime;
     push(taskQueue, newTask);
-    if (enableProfiling) {
+    if (enableProfiling) { // 初始值为false
+      //判断是否有调度任务在调度，如果有就把当前任务加入进去
       markTaskStart(newTask, currentTime);
       newTask.isQueued = true;
     }
     // Schedule a host callback, if needed. If we're already performing work,
     // wait until the next time we yield.
-    if (!isHostCallbackScheduled && !isPerformingWork) {
+    // 如果没有就会开启调度
+    if (!isHostCallbackScheduled && !isPerformingWork) { //初始这两个都是false
       isHostCallbackScheduled = true;
       requestHostCallback(flushWork);
     }
@@ -437,7 +453,7 @@ let startTime = -1;
 
 let needsPaint = false;
 
-function shouldYieldToHost() {
+function shouldYieldToHost() { // 判断当前任务执行时间是否超过一帧，或者有没有用户交互事件的发生
   const timeElapsed = getCurrentTime() - startTime;
   if (timeElapsed < frameInterval) {
     // The main thread has only been blocked for a really short amount of time;
@@ -512,8 +528,8 @@ function forceFrameRate(fps) {
   }
 }
 
-const performWorkUntilDeadline = () => {
-  if (scheduledHostCallback !== null) {
+const performWorkUntilDeadline = () => { // 调度时候执行的函数
+  if (scheduledHostCallback !== null) { // scheduledHostCallback为flushWork
     const currentTime = getCurrentTime();
     // Keep track of the start time so we can measure how long the main thread
     // has been blocked.
@@ -528,13 +544,17 @@ const performWorkUntilDeadline = () => {
     // `hasMoreWork` will remain true, and we'll continue the work loop.
     let hasMoreWork = true;
     try {
+      // scheduledHostCallback为我们requestHostCallback传入的函数 flushwork，实则执行 workLoop
       hasMoreWork = scheduledHostCallback(hasTimeRemaining, currentTime);
     } finally {
+      // 表示是否还有任务需要执行，taskqueue不为空
       if (hasMoreWork) {
         // If there's more work, schedule the next message event at the end
         // of the preceding one.
+        // 被中断了重新发起调度
         schedulePerformWorkUntilDeadline();
       } else {
+        // hasMoreWork为false表示taskqueue执行完了
         isMessageLoopRunning = false;
         scheduledHostCallback = null;
       }
@@ -548,6 +568,7 @@ const performWorkUntilDeadline = () => {
 };
 
 let schedulePerformWorkUntilDeadline;
+// schedulePerformWorkUntilDeadline这个函数针对不同的环境实现也不同，node端主要是setImmediate，普通的web使用MessageChannel，最次就是setTimeout
 if (typeof localSetImmediate === 'function') {
   // Node.js and old IE.
   // There's a few reasons for why we prefer setImmediate.
@@ -560,6 +581,7 @@ if (typeof localSetImmediate === 'function') {
   // But also, it runs earlier which is the semantic we want.
   // If other browsers ever implement it, it's better to use it.
   // Although both of these would be inferior to native scheduling.
+  //这里主要是针对node和老的ie不支持messageChanel的调用setImmediate
   schedulePerformWorkUntilDeadline = () => {
     localSetImmediate(performWorkUntilDeadline);
   };
@@ -573,15 +595,18 @@ if (typeof localSetImmediate === 'function') {
     port.postMessage(null);
   };
 } else {
+  // 如果messageChanel都不支持就使用settimeout
   // We should only fallback here in non-browser environments.
   schedulePerformWorkUntilDeadline = () => {
     localSetTimeout(performWorkUntilDeadline, 0);
   };
 }
 
-function requestHostCallback(callback) {
+function requestHostCallback(callback) {// 过期任务请求调度
+  
   scheduledHostCallback = callback;
-  if (!isMessageLoopRunning) {
+  //判断是否有messageChanel在运行
+  if (!isMessageLoopRunning) { //初始为false
     isMessageLoopRunning = true;
     schedulePerformWorkUntilDeadline();
   }

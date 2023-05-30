@@ -87,14 +87,15 @@ export function createEventListenerWrapperWithPriority(
 ): Function {
   const eventPriority = getEventPriority(domEventName);
   let listenerWrapper;
+  // 根据事件名注册不同的dispatch函数
   switch (eventPriority) {
-    case DiscreteEventPriority:
+    case DiscreteEventPriority: //最高优先级sync，第一车道
       listenerWrapper = dispatchDiscreteEvent;
       break;
-    case ContinuousEventPriority:
+    case ContinuousEventPriority: //第三车道优先级
       listenerWrapper = dispatchContinuousEvent;
       break;
-    case DefaultEventPriority:
+    case DefaultEventPriority:// 最低优先级第五车道
     default:
       listenerWrapper = dispatchEvent;
       break;
@@ -106,7 +107,7 @@ export function createEventListenerWrapperWithPriority(
     targetContainer,
   );
 }
-
+// click事件等
 function dispatchDiscreteEvent(
   domEventName,
   eventSystemFlags,
@@ -142,13 +143,14 @@ function dispatchContinuousEvent(
     ReactCurrentBatchConfig.transition = prevTransition;
   }
 }
-
+// 触发事件
 function dispatchEvent(
   domEventName: DOMEventName,
   eventSystemFlags: EventSystemFlags,
   targetContainer: EventTarget,
   nativeEvent: AnyNativeEvent,
 ) {
+  // findInstanceBlockingEvent会找到触发事件的dom和fiber
   let blockedOn = findInstanceBlockingEvent(
     domEventName,
     eventSystemFlags,
@@ -156,6 +158,7 @@ function dispatchEvent(
     nativeEvent,
   );
   if (blockedOn === null) {
+    //触发的主要函数
     dispatchEventForPluginEventSystem(
       domEventName,
       eventSystemFlags,
@@ -242,7 +245,6 @@ export function findInstanceBlockingEvent(
   // TODO: Warn if _enabled is false.
 
   return_targetInst = null;
-
   const nativeEventTarget = getEventTarget(nativeEvent);
   let targetInst = getClosestInstanceFromNode(nativeEventTarget);
 

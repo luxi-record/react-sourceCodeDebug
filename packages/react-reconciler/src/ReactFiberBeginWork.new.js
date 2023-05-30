@@ -980,7 +980,7 @@ function markRef(current: Fiber | null, workInProgress: Fiber) {
   }
 }
 
-function updateFunctionComponent(
+function updateFunctionComponent( //函数组件的更新
   current,
   workInProgress,
   Component,
@@ -1315,7 +1315,7 @@ function pushHostRootContext(workInProgress) {
   pushHostContainer(workInProgress, root.containerInfo);
 }
 
-function updateHostRoot(current, workInProgress, renderLanes) {
+function updateHostRoot(current, workInProgress, renderLanes) {// 初次render时候会case到这个函数更新hostRootFiber
   pushHostRootContext(workInProgress);
 
   if (current === null) {
@@ -1325,7 +1325,7 @@ function updateHostRoot(current, workInProgress, renderLanes) {
   const nextProps = workInProgress.pendingProps;
   const prevState = workInProgress.memoizedState;
   const prevChildren = prevState.element;
-  cloneUpdateQueue(current, workInProgress);
+  cloneUpdateQueue(current, workInProgress);// 克隆updatequeue
   processUpdateQueue(workInProgress, nextProps, null, renderLanes);
 
   const nextState: RootState = workInProgress.memoizedState;
@@ -1463,7 +1463,7 @@ function mountHostRootWithoutHydrating(
   return workInProgress.child;
 }
 
-function updateHostComponent(
+function updateHostComponent(// 原生dom节点
   current: Fiber | null,
   workInProgress: Fiber,
   renderLanes: Lanes,
@@ -3434,7 +3434,7 @@ export function checkIfWorkInProgressReceivedUpdate() {
   return didReceiveUpdate;
 }
 
-function bailoutOnAlreadyFinishedWork(
+function bailoutOnAlreadyFinishedWork( //
   current: Fiber | null,
   workInProgress: Fiber,
   renderLanes: Lanes,
@@ -3772,7 +3772,7 @@ function attemptEarlyBailoutIfNoScheduledUpdate(
   return bailoutOnAlreadyFinishedWork(current, workInProgress, renderLanes);
 }
 
-function beginWork(
+function beginWork( //performUnitOfWork的向下执行的函数，主要是创建或者更新当前节点属性返回下一节点
   current: Fiber | null,
   workInProgress: Fiber,
   renderLanes: Lanes,
@@ -3795,7 +3795,7 @@ function beginWork(
     }
   }
 
-  if (current !== null) {
+  if (current !== null) { // 初次渲染时候current为空
     const oldProps = current.memoizedProps;
     const newProps = workInProgress.pendingProps;
 
@@ -3823,7 +3823,7 @@ function beginWork(
       ) {
         // No pending updates or context. Bail out now.
         didReceiveUpdate = false;
-        return attemptEarlyBailoutIfNoScheduledUpdate(
+        return attemptEarlyBailoutIfNoScheduledUpdate( // 复用之前的节点
           current,
           workInProgress,
           renderLanes,
@@ -3892,7 +3892,7 @@ function beginWork(
         workInProgress.elementType === Component
           ? unresolvedProps
           : resolveDefaultProps(Component, unresolvedProps);
-      return updateFunctionComponent(
+      return updateFunctionComponent( //函数组件
         current,
         workInProgress,
         Component,
@@ -3916,7 +3916,7 @@ function beginWork(
       );
     }
     case HostRoot:
-      return updateHostRoot(current, workInProgress, renderLanes);
+      return updateHostRoot(current, workInProgress, renderLanes);// 从根节点开始第一次调用beginwork时候会打中这个分支
     case HostComponent:
       return updateHostComponent(current, workInProgress, renderLanes);
     case HostText:

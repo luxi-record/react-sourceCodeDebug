@@ -91,7 +91,7 @@ EnterLeaveEventPlugin.registerEvents();
 ChangeEventPlugin.registerEvents();
 SelectEventPlugin.registerEvents();
 BeforeInputEventPlugin.registerEvents();
-
+// 收集事件
 function extractEvents(
   dispatchQueue: DispatchQueue,
   domEventName: DOMEventName,
@@ -219,7 +219,7 @@ export const nonDelegatedEvents: Set<DOMEventName> = new Set([
   // we just take it from the media events array.
   ...mediaEventTypes,
 ]);
-
+// 调用invoke通过自定义事件去执行事件函数，invoke主要就是包含错误抛出以及把syntheticBaseEvent合成事件对象传入
 function executeDispatch(
   event: ReactSyntheticEvent,
   listener: Function,
@@ -257,12 +257,15 @@ function processDispatchQueueItemsInOrder(
     }
   }
 }
-
+// 触发dispatch队列里面的事件
 export function processDispatchQueue(
   dispatchQueue: DispatchQueue,
   eventSystemFlags: EventSystemFlags,
 ): void {
   const inCapturePhase = (eventSystemFlags & IS_CAPTURE_PHASE) !== 0;
+  if(dispatchQueue.length) {
+    console.log(dispatchQueue, 'log: processDispatchQueue 触发当前节点递归到根节点路径上同名的事件')
+  }
   for (let i = 0; i < dispatchQueue.length; i++) {
     const {event, listeners} = dispatchQueue[i];
     processDispatchQueueItemsInOrder(event, listeners, inCapturePhase);
@@ -271,7 +274,7 @@ export function processDispatchQueue(
   // This would be a good time to rethrow if any of the event handlers threw.
   rethrowCaughtError();
 }
-
+// 批量更新策略的fn
 function dispatchEventsForPlugins(
   domEventName: DOMEventName,
   eventSystemFlags: EventSystemFlags,
@@ -322,7 +325,7 @@ export function listenToNonDelegatedEvent(
     listenerSet.add(listenerSetKey);
   }
 }
-
+// listenralltocont循环注册事件
 export function listenToNativeEvent(
   domEventName: DOMEventName,
   isCapturePhaseListener: boolean,
@@ -383,7 +386,8 @@ const listeningMarker =
     .toString(36)
     .slice(2);
 
-export function listenToAllSupportedEvents(rootContainerElement: EventTarget) {
+export function listenToAllSupportedEvents(rootContainerElement: EventTarget) {//事件注册
+
   if (!(rootContainerElement: any)[listeningMarker]) {
     (rootContainerElement: any)[listeningMarker] = true;
     allNativeEvents.forEach(domEventName => {
@@ -418,6 +422,7 @@ function addTrappedEventListener(
   isCapturePhaseListener: boolean,
   isDeferredListenerForLegacyFBSupport?: boolean,
 ) {
+  //事件包装优先级
   let listener = createEventListenerWrapperWithPriority(
     targetContainer,
     domEventName,
@@ -459,6 +464,7 @@ function addTrappedEventListener(
   // browsers do not support this today, and given this is
   // to support legacy code patterns, it's likely they'll
   // need support for such browsers.
+  //兼容性考虑
   if (enableLegacyFBSupport && isDeferredListenerForLegacyFBSupport) {
     const originalListener = listener;
     listener = function(...p) {
@@ -481,6 +487,7 @@ function addTrappedEventListener(
         isPassiveListener,
       );
     } else {
+      //注册捕捉事件
       unsubscribeListener = addEventCaptureListener(
         targetContainer,
         domEventName,
@@ -496,6 +503,7 @@ function addTrappedEventListener(
         isPassiveListener,
       );
     } else {
+      //注册冒泡事件
       unsubscribeListener = addEventBubbleListener(
         targetContainer,
         domEventName,
@@ -532,7 +540,7 @@ function isMatchingRootContainer(
       grandContainer.parentNode === targetContainer)
   );
 }
-
+//通过插件系统派发事件
 export function dispatchEventForPluginEventSystem(
   domEventName: DOMEventName,
   eventSystemFlags: EventSystemFlags,
@@ -655,7 +663,7 @@ function createDispatchListener(
     currentTarget,
   };
 }
-
+// 事件收集函数
 export function accumulateSinglePhaseListeners(
   targetFiber: Fiber | null,
   reactName: string | null,
@@ -672,6 +680,7 @@ export function accumulateSinglePhaseListeners(
   let lastHostComponent = null;
 
   // Accumulate all instances and listeners via the target -> root path.
+  // 从事件触发点到root收集事件
   while (instance !== null) {
     const {stateNode, tag} = instance;
     // Handle listeners that are on HostComponents (i.e. <div>)

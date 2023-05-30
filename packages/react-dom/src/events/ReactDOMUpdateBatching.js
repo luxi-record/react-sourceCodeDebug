@@ -39,12 +39,14 @@ function finishEventHandler() {
     // bails out of the update without touching the DOM.
     // TODO: Restore state in the microtask, after the discrete updates flush,
     // instead of early flushing them here.
+    debugger
     flushSyncImpl();
     restoreStateIfNeeded();
   }
 }
 
 export function batchedUpdates(fn, a, b) {
+  //判断程序有没有正在做事件处理
   if (isInsideEventHandler) {
     // If we are currently inside another batch, we need to wait until it
     // fully completes before restoring state.

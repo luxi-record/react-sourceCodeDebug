@@ -243,15 +243,15 @@ function findHostInstanceWithWarning(
   return findHostInstance(component);
 }
 
-export function createContainer(
+export function createContainer( //创建根节点
   containerInfo: Container,
-  tag: RootTag,
-  hydrationCallbacks: null | SuspenseHydrationCallbacks,
-  isStrictMode: boolean,
-  concurrentUpdatesByDefaultOverride: null | boolean,
-  identifierPrefix: string,
-  onRecoverableError: (error: mixed) => void,
-  transitionCallbacks: null | TransitionTracingCallbacks,
+  tag: RootTag, //0， legacy为0， concurrent为1
+  hydrationCallbacks: null | SuspenseHydrationCallbacks, //null
+  isStrictMode: boolean, // false
+  concurrentUpdatesByDefaultOverride: null | boolean, // false
+  identifierPrefix: string, // ‘’
+  onRecoverableError: (error: mixed) => void, //一个函数为空function（）{}
+  transitionCallbacks: null | TransitionTracingCallbacks, // null
 ): OpaqueRoot {
   const hydrate = false;
   const initialChildren = null;
@@ -317,16 +317,18 @@ export function createHydrationContainer(
   return root;
 }
 
+// 不论是初次渲染还是更新都会调用updateContainer函数，经过一些处理会调用scheduleUpdateOnFiber
 export function updateContainer(
   element: ReactNodeList,
   container: OpaqueRoot,
   parentComponent: ?React$Component<any, any>,
   callback: ?Function,
 ): Lane {
+  console.log('new')
   if (__DEV__) {
     onScheduleRoot(container, element);
   }
-  const current = container.current;
+  const current = container.current;// 指向hostrootfiber
   const eventTime = requestEventTime();
   const lane = requestUpdateLane(current);
 
@@ -359,6 +361,16 @@ export function updateContainer(
   }
 
   const update = createUpdate(eventTime, lane);
+  // const update: Update<*> = {
+  //   eventTime,
+  //   lane,
+
+  //   tag: UpdateState,
+  //   payload: null,
+  //   callback: null,
+
+  //   next: null,
+  // };
   // Caution: React DevTools currently depends on this property
   // being called "element".
   update.payload = {element};
@@ -377,8 +389,8 @@ export function updateContainer(
     update.callback = callback;
   }
 
-  enqueueUpdate(current, update, lane);
-  const root = scheduleUpdateOnFiber(current, lane, eventTime);
+  enqueueUpdate(current, update, lane);// 是把当前更新放入环状链表中
+  const root = scheduleUpdateOnFiber(current, lane, eventTime); //调度更新开始
   if (root !== null) {
     entangleTransitions(root, current, lane);
   }

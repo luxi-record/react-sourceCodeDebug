@@ -13,6 +13,8 @@
 // When we switch to ESM, we can delete this module.
 import * as Scheduler from 'scheduler';
 
+import * as SchedulerMock from 'scheduler/src/forks/SchedulerMock';
+
 export const scheduleCallback = Scheduler.unstable_scheduleCallback;
 export const cancelCallback = Scheduler.unstable_cancelCallback;
 export const shouldYield = Scheduler.unstable_shouldYield;
@@ -29,6 +31,10 @@ export type SchedulerCallback = (isSync: boolean) => SchedulerCallback | null;
 
 // this doesn't actually exist on the scheduler, but it *does*
 // on scheduler/unstable_mock, which we'll need for internal testing
-export const unstable_yieldValue = Scheduler.unstable_yieldValue;
-export const unstable_setDisableYieldValue =
-  Scheduler.unstable_setDisableYieldValue;
+// export const unstable_yieldValue = Scheduler.unstable_yieldValue;
+// export const unstable_setDisableYieldValue =
+//   Scheduler.unstable_setDisableYieldValue;
+
+
+export const unstable_yieldValue = SchedulerMock.unstable_yieldValue;
+export const unstable_setDisableYieldValue = SchedulerMock.unstable_setDisableYieldValue;

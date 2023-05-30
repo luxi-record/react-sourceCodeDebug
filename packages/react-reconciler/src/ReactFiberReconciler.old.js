@@ -242,7 +242,7 @@ function findHostInstanceWithWarning(
   }
   return findHostInstance(component);
 }
-
+//调用createFiberRoot创建root
 export function createContainer(
   containerInfo: Container,
   tag: RootTag,
@@ -316,7 +316,7 @@ export function createHydrationContainer(
 
   return root;
 }
-
+//创建update，挂载payload
 export function updateContainer(
   element: ReactNodeList,
   container: OpaqueRoot,
@@ -362,7 +362,6 @@ export function updateContainer(
   // Caution: React DevTools currently depends on this property
   // being called "element".
   update.payload = {element};
-
   callback = callback === undefined ? null : callback;
   if (callback !== null) {
     if (__DEV__) {
@@ -376,8 +375,9 @@ export function updateContainer(
     }
     update.callback = callback;
   }
-
   enqueueUpdate(current, update, lane);
+  console.log(current, update, 'log: updateContainer')
+  console.log('log: updateContainer  updatecontainer会初始化update，并挂载到current的updatequeue.firstbaseupdate上(update是一个环状链表)，并调用scheduleUpdateOnFiber(current, lane, eventTime)')
   const root = scheduleUpdateOnFiber(current, lane, eventTime);
   if (root !== null) {
     entangleTransitions(root, current, lane);

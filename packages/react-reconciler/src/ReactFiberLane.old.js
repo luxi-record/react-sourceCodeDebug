@@ -459,7 +459,7 @@ export function includesOnlyNonUrgentLanes(lanes: Lanes) {
   const UrgentLanes = SyncLane | InputContinuousLane | DefaultLane;
   return (lanes & UrgentLanes) === NoLanes;
 }
-
+// 判断是否分片
 export function includesBlockingLane(root: FiberRoot, lanes: Lanes) {
   if (
     allowConcurrentByDefault &&
@@ -475,7 +475,7 @@ export function includesBlockingLane(root: FiberRoot, lanes: Lanes) {
     DefaultLane;
   return (lanes & SyncDefaultLanes) !== NoLanes;
 }
-
+// 判断有没有过期的任务
 export function includesExpiredLane(root: FiberRoot, lanes: Lanes) {
   // This is a separate check from includesBlockingLane because a lane can
   // expire after a render has already started.

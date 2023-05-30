@@ -63,8 +63,8 @@ function FiberRootNode(
   this.pendingContext = null;
   this.callbackNode = null;
   this.callbackPriority = NoLane;
-  this.eventTimes = createLaneMap(NoLanes);
-  this.expirationTimes = createLaneMap(NoTimestamp);
+  this.eventTimes = createLaneMap(NoLanes); //一个优先级的数组[NoLanes,NoLanes],31长度初始都是nolanes
+  this.expirationTimes = createLaneMap(NoTimestamp); //初始为【notimestamp】， NoTimestamp=-1，最高优先级
 
   this.pendingLanes = NoLanes;
   this.suspendedLanes = NoLanes;
@@ -125,23 +125,23 @@ function FiberRootNode(
   }
 }
 
-export function createFiberRoot(
+export function createFiberRoot( //createContainer创建根节点实际调用的函数
   containerInfo: any,
-  tag: RootTag,
-  hydrate: boolean,
-  initialChildren: ReactNodeList,
-  hydrationCallbacks: null | SuspenseHydrationCallbacks,
-  isStrictMode: boolean,
-  concurrentUpdatesByDefaultOverride: null | boolean,
+  tag: RootTag, //0，legacy为0， concurrent为1
+  hydrate: boolean, //false
+  initialChildren: ReactNodeList, // null
+  hydrationCallbacks: null | SuspenseHydrationCallbacks, //null
+  isStrictMode: boolean,//false
+  concurrentUpdatesByDefaultOverride: null | boolean,//false
   // TODO: We have several of these arguments that are conceptually part of the
   // host config, but because they are passed in at runtime, we have to thread
   // them through the root constructor. Perhaps we should put them all into a
   // single type, like a DynamicHostConfig that is defined by the renderer.
-  identifierPrefix: string,
+  identifierPrefix: string,//‘’
   onRecoverableError: null | ((error: mixed) => void),
   transitionCallbacks: null | TransitionTracingCallbacks,
 ): FiberRoot {
-  const root: FiberRoot = (new FiberRootNode(
+  const root: FiberRoot = (new FiberRootNode( // 创建全局唯一的一个根节点fiberroot
     containerInfo,
     tag,
     hydrate,
@@ -158,11 +158,15 @@ export function createFiberRoot(
 
   // Cyclic construction. This cheats the type system right now because
   // stateNode is any.
-  const uninitializedFiber = createHostRootFiber(
+  const uninitializedFiber = createHostRootFiber( //创建一个hostrootfiber
     tag,
     isStrictMode,
     concurrentUpdatesByDefaultOverride,
   );
+  // hostfiber：{
+  //   tag：host ==> 5
+  //   mode: NoMode ==> 一个进制数
+  // }
   root.current = uninitializedFiber;
   uninitializedFiber.stateNode = root;
 
@@ -197,6 +201,18 @@ export function createFiberRoot(
   }
 
   initializeUpdateQueue(uninitializedFiber);
+  // 初始化hostfiber的updatequeue
+  // const queue: UpdateQueue<State> = {
+  //   baseState: fiber.memoizedState,
+  //   firstBaseUpdate: null,
+  //   lastBaseUpdate: null,
+  //   shared: {
+  //     pending: null,
+  //     interleaved: null,
+  //     lanes: NoLanes,
+  //   },
+  //   effects: null,
+  // };
 
   return root;
 }

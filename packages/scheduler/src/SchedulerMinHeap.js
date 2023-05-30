@@ -35,7 +35,7 @@ export function pop(heap: Heap): Node | null {
   }
   return first;
 }
-
+// 用于比较txinaskqueue中新加的任务和前一个任务的过期时间，如果新加的过期时间比前一个小，则交换他们两个的位置
 function siftUp(heap, node, i) {
   let index = i;
   while (index > 0) {

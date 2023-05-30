@@ -211,7 +211,7 @@ function FiberNode(
 //    is faster.
 // 5) It should be easy to port this to a C struct and keep a C implementation
 //    compatible.
-const createFiber = function(
+const createFiber = function(// fiber创建函数
   tag: WorkTag,
   pendingProps: mixed,
   key: null | string,
@@ -250,7 +250,7 @@ export function resolveLazyComponentTag(Component: Function): WorkTag {
 }
 
 // This is used to create an alternate fiber to do work on.
-export function createWorkInProgress(current: Fiber, pendingProps: any): Fiber {
+export function createWorkInProgress(current: Fiber, pendingProps: any): Fiber { //创建workingProgress树
   let workInProgress = current.alternate;
   if (workInProgress === null) {
     // We use a double buffering pooling technique because we know that we'll
@@ -429,13 +429,13 @@ export function resetWorkInProgress(workInProgress: Fiber, renderLanes: Lanes) {
   return workInProgress;
 }
 
-export function createHostRootFiber(
-  tag: RootTag,
-  isStrictMode: boolean,
-  concurrentUpdatesByDefaultOverride: null | boolean,
+export function createHostRootFiber( // 创建hostfiber
+  tag: RootTag, // 0，ConcurrentRoot为1
+  isStrictMode: boolean,//false
+  concurrentUpdatesByDefaultOverride: null | boolean, //false
 ): Fiber {
   let mode;
-  if (tag === ConcurrentRoot) {
+  if (tag === ConcurrentRoot) {// false
     mode = ConcurrentMode;
     if (isStrictMode === true) {
       mode |= StrictLegacyMode;
@@ -456,7 +456,7 @@ export function createHostRootFiber(
       mode |= ConcurrentUpdatesByDefaultMode;
     }
   } else {
-    mode = NoMode;
+    mode = NoMode; //一个进制数
   }
 
   if (enableProfilerTimer && isDevToolsPresent) {
@@ -466,7 +466,7 @@ export function createHostRootFiber(
     mode |= ProfileMode;
   }
 
-  return createFiber(HostRoot, null, null, mode);
+  return createFiber(HostRoot, null, null, mode);// fiber创建函数,HostRoot=3, hostcomponent=5
 }
 
 export function createFiberFromTypeAndProps(

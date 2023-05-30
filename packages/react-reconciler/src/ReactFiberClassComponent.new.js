@@ -201,7 +201,7 @@ function applyDerivedStateFromProps(
 
 const classComponentUpdater = {
   isMounted,
-  enqueueSetState(inst, payload, callback) {
+  enqueueSetState(inst, payload, callback) { // 类组件的this.setState就是调用该函数，该函数会调用scheduleUpdateOnFiber
     const fiber = getInstance(inst);
     const eventTime = requestEventTime();
     const lane = requestUpdateLane(fiber);

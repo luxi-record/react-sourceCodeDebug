@@ -141,6 +141,7 @@ export function createFiberRoot(
   onRecoverableError: null | ((error: mixed) => void),
   transitionCallbacks: null | TransitionTracingCallbacks,
 ): FiberRoot {
+  console.error('createFiberRoot参数==> containerInfo, tag, hydrate, initialChildren, hydrationCallbacks, concurrentUpdatesByDefaultOverride, identifierPrefix, onRecoverableError, transitionCallbacks', containerInfo, tag, hydrate, initialChildren, hydrationCallbacks, concurrentUpdatesByDefaultOverride, identifierPrefix, onRecoverableError, transitionCallbacks)
   const root: FiberRoot = (new FiberRootNode(
     containerInfo,
     tag,
@@ -197,6 +198,7 @@ export function createFiberRoot(
   }
 
   initializeUpdateQueue(uninitializedFiber);
-
+  console.log(root, uninitializedFiber, 'log: createFiberRoot')
+  console.log('log: createFiberRoot','根据dom创建的fiberroot和创建hostrootfiber，并赋值root.current,并初始化hostfiber的updatequeue，和memoizedState')
   return root;
 }

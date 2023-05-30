@@ -148,6 +148,7 @@ function createRoot(
   container: Element | DocumentFragment,
   options?: CreateRootOptions,
 ): RootType {
+  console.error('step createRoot ==> createRootImpl(间接调用另一个createRoot) ==> createContainer')
   if (__DEV__) {
     if (!Internals.usingClientEntryPoint && !__UMD__) {
       console.error(

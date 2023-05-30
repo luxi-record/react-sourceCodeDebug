@@ -57,7 +57,7 @@ if (__DEV__) {
     typeof document.createEvent === 'function'
   ) {
     const fakeNode = document.createElement('react');
-
+    // invokeGuardedCallbackDev就是包装执行事件的函数
     invokeGuardedCallbackImpl = function invokeGuardedCallbackDev<
       A,
       B,
@@ -92,7 +92,7 @@ if (__DEV__) {
             'to be asynchronous.',
         );
       }
-
+      // 通过自定义事件来触发
       const evt = document.createEvent('Event');
 
       let didCall = false;
@@ -139,6 +139,7 @@ if (__DEV__) {
       // dispatch our fake event using `dispatchEvent`. Inside the handler, we
       // call the user-provided callback.
       const funcArgs = Array.prototype.slice.call(arguments, 3);
+      // 这个才是最终事件触发的函数
       function callCallback() {
         didCall = true;
         restoreAfterDispatch();
@@ -192,6 +193,7 @@ if (__DEV__) {
       // Synchronously dispatch our fake event. If the user-provided function
       // errors, it will trigger our global error handler.
       evt.initEvent(evtType, false, false);
+      //手动触发自定义事件
       fakeNode.dispatchEvent(evt);
 
       if (windowEventDescriptor) {

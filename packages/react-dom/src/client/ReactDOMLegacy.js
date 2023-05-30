@@ -39,6 +39,7 @@ import {LegacyRoot} from 'react-reconciler/src/ReactRootTags';
 import getComponentNameFromType from 'shared/getComponentNameFromType';
 import ReactSharedInternals from 'shared/ReactSharedInternals';
 import {has as hasInstance} from 'shared/ReactInstanceMap';
+import { NoMode } from '../../../react-reconciler/src/ReactTypeOfMode';
 
 const ReactCurrentOwner = ReactSharedInternals.ReactCurrentOwner;
 
@@ -108,14 +109,14 @@ function noopOnRecoverableError() {
   // legacy API.
 }
 
-function legacyCreateRootFromDOMContainer(
+function legacyCreateRootFromDOMContainer( // render时候如果是初次渲染就会调用该函数创建根节点，如果不是初次就会直接调用updateContainer
   container: Container,
   initialChildren: ReactNodeList,
   parentComponent: ?React$Component<any, any>,
   callback: ?Function,
   isHydrationContainer: boolean,
 ): FiberRoot {
-  if (isHydrationContainer) {
+  if (isHydrationContainer) { //初始为false
     if (typeof callback === 'function') {
       const originalCallback = callback;
       callback = function() {
@@ -128,7 +129,7 @@ function legacyCreateRootFromDOMContainer(
       initialChildren,
       callback,
       container,
-      LegacyRoot,
+      LegacyRoot, // 为0，当是ConcurrentRoot时候为1
       null, // hydrationCallbacks
       false, // isStrictMode
       false, // concurrentUpdatesByDefaultOverride,
@@ -153,7 +154,7 @@ function legacyCreateRootFromDOMContainer(
       container.removeChild(rootSibling);
     }
 
-    if (typeof callback === 'function') {
+    if (typeof callback === 'function') { // render的第三个参数
       const originalCallback = callback;
       callback = function() {
         const instance = getPublicRootInstance(root);
@@ -161,9 +162,28 @@ function legacyCreateRootFromDOMContainer(
       };
     }
 
+    // 创建应用根节点实则调用createFiberRoot， 返回一个fiberRoot
+    // 主要是创建全局唯一个fiberRoot和一个hostrootfiber
+    // 初始化hostFiber的tag（fiber类型），updatequeue
+    // hostrootfiber：{
+    //   tag：HostRoot=3
+    //   mode： NoMode
+    // }
+    // const queue = updatequeue:{
+    //   baseState: fiber.memoizedState, 这里base为initialChildren
+    //   firstBaseUpdate: null,
+    //   lastBaseUpdate: null,
+    //   shared: {
+    //     pending: null,
+    //     interleaved: null,
+    //     lanes: NoLanes,
+    //   },
+    //   effects: null,
+    // }
+    // 把hostrootfiber挂载到fiberRoot的current上
     const root = createContainer(
       container,
-      LegacyRoot,
+      LegacyRoot,// 为0，当是ConcurrentRoot时候为1
       null, // hydrationCallbacks
       false, // isStrictMode
       false, // concurrentUpdatesByDefaultOverride,
@@ -172,13 +192,13 @@ function legacyCreateRootFromDOMContainer(
       null, // transitionCallbacks
     );
     container._reactRootContainer = root;
-    markContainerAsRoot(root.current, container);
+    markContainerAsRoot(root.current, container);// 标记当前div已经是root了
 
     const rootContainerElement =
       container.nodeType === COMMENT_NODE ? container.parentNode : container;
-    listenToAllSupportedEvents(rootContainerElement);
+    listenToAllSupportedEvents(rootContainerElement);// 事件绑定，将所有的事件分配相关的优先级并绑定在root上
 
-    // Initial mount should not be batched.
+    // Initial mount should not be batched. //初始渲染阶段调用的更新是同步的不是批量
     flushSync(() => {
       updateContainer(initialChildren, root, parentComponent, callback);
     });
@@ -200,11 +220,11 @@ function warnOnInvalidCallback(callback: mixed, callerName: string): void {
   }
 }
 
-function legacyRenderSubtreeIntoContainer(
-  parentComponent: ?React$Component<any, any>,
+function legacyRenderSubtreeIntoContainer( //render实则就是调用该函数
+  parentComponent: ?React$Component<any, any>, // null
   children: ReactNodeList,
   container: Container,
-  forceHydrate: boolean,
+  forceHydrate: boolean, // false
   callback: ?Function,
 ) {
   if (__DEV__) {
@@ -212,18 +232,18 @@ function legacyRenderSubtreeIntoContainer(
     warnOnInvalidCallback(callback === undefined ? null : callback, 'render');
   }
 
-  const maybeRoot = container._reactRootContainer;
+  const maybeRoot = container._reactRootContainer; // 根节点（root）dom属性指向整个应用的rootFiber（也就是整个fiber树）
   let root: FiberRoot;
-  if (!maybeRoot) {
+  if (!maybeRoot) { //初始渲染的时候
     // Initial mount
-    root = legacyCreateRootFromDOMContainer(
+    root = legacyCreateRootFromDOMContainer( //创建root整个应用的根节点
       container,
       children,
       parentComponent,
       callback,
       forceHydrate,
     );
-  } else {
+  } else { //更新的时候
     root = maybeRoot;
     if (typeof callback === 'function') {
       const originalCallback = callback;
@@ -232,7 +252,7 @@ function legacyRenderSubtreeIntoContainer(
         originalCallback.call(instance);
       };
     }
-    // Update
+    // Update 更新调用函数
     updateContainer(children, root, parentComponent, callback);
   }
   return getPublicRootInstance(root);
@@ -310,7 +330,7 @@ export function hydrate(
   );
 }
 
-export function render(
+export function render( //应用的根入口
   element: React$Element<any>,
   container: Container,
   callback: ?Function,
@@ -340,7 +360,7 @@ export function render(
       );
     }
   }
-  return legacyRenderSubtreeIntoContainer(
+  return legacyRenderSubtreeIntoContainer( //调用开始函数
     null,
     element,
     container,

@@ -283,7 +283,7 @@ if (__DEV__) {
   didWarnAboutTailOptions = {};
   didWarnAboutDefaultPropsOnFunctionComponent = {};
 }
-
+// diff算法child
 export function reconcileChildren(
   current: Fiber | null,
   workInProgress: Fiber,
@@ -979,7 +979,7 @@ function markRef(current: Fiber | null, workInProgress: Fiber) {
     }
   }
 }
-
+// 函数组件
 function updateFunctionComponent(
   current,
   workInProgress,
@@ -1494,6 +1494,7 @@ function updateHostComponent(
   }
 
   markRef(current, workInProgress);
+  // diff算法
   reconcileChildren(current, workInProgress, nextChildren, renderLanes);
   return workInProgress.child;
 }
@@ -1672,7 +1673,7 @@ function mountIncompleteClassComponent(
     renderLanes,
   );
 }
-
+//初次函数组件渲染的时候都会走这里
 function mountIndeterminateComponent(
   _current,
   workInProgress,
@@ -1881,7 +1882,7 @@ function mountIndeterminateComponent(
     if (getIsHydrating() && hasId) {
       pushMaterializedTreeId(workInProgress);
     }
-
+    //diff
     reconcileChildren(null, workInProgress, value, renderLanes);
     if (__DEV__) {
       validateFunctionComponentInDev(workInProgress, Component);
@@ -3771,7 +3772,7 @@ function attemptEarlyBailoutIfNoScheduledUpdate(
   }
   return bailoutOnAlreadyFinishedWork(current, workInProgress, renderLanes);
 }
-
+//render
 function beginWork(
   current: Fiber | null,
   workInProgress: Fiber,
@@ -3794,7 +3795,7 @@ function beginWork(
       );
     }
   }
-
+  console.log(renderLanes,'log: beginwork')
   if (current !== null) {
     const oldProps = current.memoizedProps;
     const newProps = workInProgress.pendingProps;
@@ -3869,6 +3870,7 @@ function beginWork(
 
   switch (workInProgress.tag) {
     case IndeterminateComponent: {
+      console.log('log: beginwork 函数组件组件初次都会走mountIndeterminateComponent再来判别是函数组件还是类组件并赋值tag')
       return mountIndeterminateComponent(
         current,
         workInProgress,
