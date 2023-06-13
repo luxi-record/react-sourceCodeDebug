@@ -4,7 +4,7 @@
 
 **调试步骤**：直接clone项目到本地，依次执行 npm i  ==> npm run dev
 
-**React源码版本**：version@18.1.0
+**React源码版本**：version@18.0.0
 
 **源码位置**：src/react/packages
 
