@@ -515,24 +515,27 @@ function requestRetryLane(fiber: Fiber) {
   return claimNextRetryLane();
 }
 // 调度更新
+let log = 0
 export function scheduleUpdateOnFiber(
   fiber: Fiber,
   lane: Lane,
   eventTime: number,
 ): FiberRoot | null {
-  checkForNestedUpdates();//
+  checkForNestedUpdates();// 检测是否死循环
   if (__DEV__) {
     if (isRunningInsertionEffect) {
       console.error('useInsertionEffect must not schedule updates.');
     }
   }
+  if(log === 0) {
+    console.error(`先总结下scheduleUpdateOnFiber的作用，首先他会去判断本次触发的更新是不是死循环，例如在didupdate调用setstate等。
+    其次会重当前更新节点一直递归到HostRootFiber，递归过程主要是更新current tree和workInProgress tree 的子节点的优先级`)
+  }
   //markUpdateLaneFromFiberToRoot这是一个从当前更新节点到hostrootfiber的一个向上递归过程主要用于更新递归路径上fiber的lanes
   const root = markUpdateLaneFromFiberToRoot(fiber, lane);
-  console.log(root, 'log: scheduleUpdateOnFiber 触发scheduleUpdateOnFiber')
   if (root === null) {
     return null;
   }
-
   if (__DEV__) {
     if (isFlushingPassiveEffects) {
       didScheduleUpdateDuringPassiveEffects = true;

@@ -255,6 +255,7 @@ export function createContainer(
 ): OpaqueRoot {
   const hydrate = false;
   const initialChildren = null;
+  console.warn('creatRoot通过createContainer内调用createFiberRoot创建应用里面唯一的一个FiberRoot')
   return createFiberRoot(
     containerInfo,
     tag,
@@ -329,7 +330,6 @@ export function updateContainer(
   const current = container.current;
   const eventTime = requestEventTime();
   const lane = requestUpdateLane(current);
-
   if (enableSchedulingProfiler) {
     markRenderScheduled(lane);
   }
@@ -375,9 +375,13 @@ export function updateContainer(
     }
     update.callback = callback;
   }
+  console.error(`updateContainer会通过FiberRoot获取HostRootFiber，再通过HostRootFiber获取优先级，通过优先级和当前时间创建一个update，
+  并把编译好的App根节点赋予update.payload表示要更新的节点，然后调用enqueueUpdate初始化HostRootFiber的updatequeue，
+  updatequeue是一个环状的链表`)
+  console.log('优先级，update对应结构：', lane, update)
   enqueueUpdate(current, update, lane);
-  console.log(current, update, 'log: updateContainer')
-  console.log('log: updateContainer  updatecontainer会初始化update，并挂载到current的updatequeue.firstbaseupdate上(update是一个环状链表)，并调用scheduleUpdateOnFiber(current, lane, eventTime)')
+  console.warn('updatequeue结构如下：',current.updateQueue)
+  console.log('初始化更新队列后，调用scheduleUpdateOnFiber开始执行更新')
   const root = scheduleUpdateOnFiber(current, lane, eventTime);
   if (root !== null) {
     entangleTransitions(root, current, lane);

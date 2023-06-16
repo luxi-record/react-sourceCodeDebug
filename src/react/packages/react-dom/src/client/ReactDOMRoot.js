@@ -131,8 +131,8 @@ ReactDOMHydrationRoot.prototype.render = ReactDOMRoot.prototype.render = functio
       }
     }
   }
-  
-  console.log(children, 'log: ReactDOMRoot.prototype.render   child，创建完root和hostroot后render调用updateContainer(children, root, null, null)')
+  console.warn('createRoot工作做完后，调用root.render实则是调用updateContainer(children, root, null, null)，children是编译好的<App />根组件，root是我们创建好的FiberRoot')
+  console.log('children, root对应结构：',children, root)
   updateContainer(children, root, null, null);
 };
 
@@ -169,7 +169,7 @@ export function createRoot(
   container: Element | DocumentFragment,
   options?: CreateRootOptions,
 ): RootType {
-  console.error('step 2 createRoot调用createContainer创建root')
+  console.log('createRoot会先校验传入的container是否为一个有效的DOM节点，如果是开发环境还会做一些其他校验如是否为body等')
   // 校验container是否有效
   if (!isValidContainer(container)) {
     throw new Error('createRoot(...): Target container is not a DOM element.');
@@ -178,11 +178,11 @@ export function createRoot(
   warnIfReactDOMContainerInDEV(container);
 
   let isStrictMode = false;
-  let concurrentUpdatesByDefaultOverride = false;
+  let concurrentUpdatesByDefaultOverride = false; // 是否默认开启并发模式
   let identifierPrefix = '';
   let onRecoverableError = defaultOnRecoverableError;
   let transitionCallbacks = null;
-  // 第二个参数不为空
+  // 第二个参数不为空时
   if (options !== null && options !== undefined) {
     if (__DEV__) {
       if ((options: any).hydrate) {
@@ -235,16 +235,18 @@ export function createRoot(
     onRecoverableError,
     transitionCallbacks,
   );
-  markContainerAsRoot(root.current, container);
+  markContainerAsRoot(root.current, container); // 把container这个DOM打上React的标记，就是在DOM上加个属性
+  console.warn('创建完FiberRoot和HostRootFiber后，会根据传入的container是否为注释标签')
+  console.log('如果是则取它的父节点，如果不是就取本身，通过listenToAllSupportedEvents把组成事件(事件委托)')
   const rootContainerElement: Document | Element | DocumentFragment =
     container.nodeType === COMMENT_NODE
       ? (container.parentNode: any)
-      : container;
+      : container; //判断传入的container是不是注释标签，是就去它父元素
   //事件绑定
-  console.log('react会把所有事件绑定到root上面，并且定义一个map映射表，把原生事件和react事件相对应，当触发一个事件的时候react会从触发的target向上到root收集相同react事件，放在一个listenrs数组中，事件监听函数是通过优先级封装了一层，不同事件对应不同优先级，也对应着不同的事件对象syntheticBaseEvent')
-  console.log('通过batchUpdate触发事件')
   listenToAllSupportedEvents(rootContainerElement);
-
+  console.error(`至此createRoot工作基本做完，主要就是根据传入的DOM创建FiberRoot和HostRootFiber，初始化HostRootFiber的状态以及更新队列
+  并把HostRootFiber.stateNode指向FiberRoot，把FiberRoot.current指向HostRootFiber，用于更新。
+  并通过所有浏览器事件名创建对应的带有更新优先级的listener绑定在传入的DOM节点上`)
   return new ReactDOMRoot(root);
 }
 

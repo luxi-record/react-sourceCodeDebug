@@ -148,7 +148,7 @@ function createRoot(
   container: Element | DocumentFragment,
   options?: CreateRootOptions,
 ): RootType {
-  console.error('step createRoot ==> createRootImpl(间接调用另一个createRoot) ==> createContainer')
+  console.warn('项目初始渲染时候，首先调用createRoot(container,option)，通过传入一个HTML节点创建一个根节点。')
   if (__DEV__) {
     if (!Internals.usingClientEntryPoint && !__UMD__) {
       console.error(

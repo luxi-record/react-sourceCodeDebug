@@ -387,9 +387,13 @@ const listeningMarker =
     .slice(2);
 
 export function listenToAllSupportedEvents(rootContainerElement: EventTarget) {//事件注册
-
+  console.error(`这里先总结下React的事件，React会把所有的浏览器事件绑定到传入的container上面，如果传入的是注释标签就绑定在它父元素上面，
+  并且定义一个map映射表，把原生事件和react事件相对应，当触发一个事件的时候react会从触发的target向上到root递归收集相同react事件，
+  放在一个listenrs数组中，React事件函数是通过优先级封装了一层，每个React事件有着不同的优先级，不同事件对应不同优先级，也对应着不同的事件对象syntheticBaseEvent，把收集到的事件通过batchUpdate触发事件`)
   if (!(rootContainerElement: any)[listeningMarker]) {
     (rootContainerElement: any)[listeningMarker] = true;
+    console.log('通过循环事件名，根据事件是否冒泡调用listenToNativeEvent(事件名，是否冒泡，绑定的元素)把除了selectionchange的其他事件事件注到contaainer上，selectionchange会注册在document上')
+    console.log('所有事件', allNativeEvents)
     allNativeEvents.forEach(domEventName => {
       // We handle selectionchange separately because it
       // doesn't bubble and needs to be on the document.
@@ -414,7 +418,7 @@ export function listenToAllSupportedEvents(rootContainerElement: EventTarget) {/
     }
   }
 }
-
+let log = 0
 function addTrappedEventListener(
   targetContainer: EventTarget,
   domEventName: DOMEventName,
@@ -422,12 +426,20 @@ function addTrappedEventListener(
   isCapturePhaseListener: boolean,
   isDeferredListenerForLegacyFBSupport?: boolean,
 ) {
+  if(log === 0) {
+    console.log('listenToNativeEvent调用addTrappedEventListener(绑定对象，事件名，事件flag，是否为捕捉)')
+    console.warn('在addTrappedEventListener内先通过createEventListenerWrapperWithPriority创建一个带有优先级的listener')
+  }
   //事件包装优先级
   let listener = createEventListenerWrapperWithPriority(
     targetContainer,
     domEventName,
     eventSystemFlags,
   );
+  if(log === 0) {
+    console.log('创建完带有优先级的listener后会通过是否冒泡等判断，调用container.addEventListener(eventType, listener, options)绑定事件')
+    log = 1
+  }
   // If passive option is not supported, then the event will be
   // active and not passive.
   let isPassiveListener = undefined;

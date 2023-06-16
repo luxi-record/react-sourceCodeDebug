@@ -175,6 +175,8 @@ export function initializeUpdateQueue<State>(fiber: Fiber): void {
     effects: null,
   };
   fiber.updateQueue = queue;
+  console.log('createFiberRoot创建完HostRootFiber和FiberRoot后，会通过initializeUpdateQueue初始化HostRootFiber的updateQueue也就是更新队列')
+  console.log('queue结构如下：', queue)
 }
 
 export function cloneUpdateQueue<State>(
@@ -222,7 +224,6 @@ export function enqueueUpdate<State>(
   }
 
   const sharedQueue: SharedQueue<State> = (updateQueue: any).shared;
-
   if (isInterleavedUpdate(fiber, lane)) {
     const interleaved = sharedQueue.interleaved;
     if (interleaved === null) {
