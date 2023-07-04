@@ -3795,8 +3795,9 @@ function beginWork(
       );
     }
   }
-  console.log(renderLanes,'log: beginwork')
+  console.log('当前beginwork的渲染优先级以及current tree 和workInProgress tree',renderLanes, current, workInProgress)
   if (current !== null) {
+    console.log('current不为空******************************')
     const oldProps = current.memoizedProps;
     const newProps = workInProgress.pendingProps;
 

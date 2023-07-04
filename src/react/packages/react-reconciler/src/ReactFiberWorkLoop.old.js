@@ -741,6 +741,7 @@ export function isInterleavedUpdate(fiber: Fiber, lane: Lane) {
 // root has work on. This function is called on every update, and right before
 // exiting a task.
 // scheduled调用ensureRootIsScheduled进行更新, react18中异步调用多次状态改变只会触发一次更新是根据优先级加上执行栈的上下文进行判别的
+let logs = 0
 function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
   const existingCallbackNode = root.callbackNode;
   // Check if any lanes are being starved by other work. If so, mark them as
@@ -753,9 +754,20 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
     root,
     root === workInProgressRoot ? workInProgressRootRenderLanes : NoLanes,
   );
-  console.log(root, workInProgressRoot, root === workInProgressRoot, workInProgressRootRenderLanes, 'log: ensureRootIsScheduled getNextLanes参数')
-  console.log(nextLanes, existingCallbackNode, 'log: ensureRootIsScheduled 触发ensureRootIsScheduled， nextlane， cbnode')
+  logs === 0 && console.error(`
+  ensureRootIsScheduled首先会检测有没有要过期的任务，如果有就会更新root上的过期优先级防止任务被饿死。然后获取下一个更新优先级。
+  简单介绍下主要的优先级有哪些：0代表NoLanes表示没任务需要处理，1代表同步最高优先级，4代表处理哪些用户输入等触发的更新的优先级，16代表默认优先级比如初次render等。
+  当发现下一个更新优先级为0时候，就会检测是否存在root.callbackNode，如果存在就会调度执行，***root.callbackNode实际就是那些被高优先级任务所中断的低优先级任务***。
+  如果下一更新优先级不为0，就会使用优先级最高的通道来表示下一回调的优先级，然后获取当前根节点上已存在回调的优先级，如果发现已存在优先级和下一优先级一样就重用，现在的任务不会再向synqueue里面增加任务。
+  这里的回调指的的就是setstate这些。这也就解释了为啥一个事件函数中触发多个setstate只会触发一次更新的原因。
+  如果下一个回调优先级和已经存在回调优先级不相同就会判断下一回调优先级是否是同步最高优先级，如果是就会把更新任务推入到synqueue去。
+  如果不是就会重新根据下一更新优先级创建一个调度优先级再scheduleCallback调度更新`)
+  logs === 0 && console.error(`在react中有两种有限级一种是react更新优先级，一种是调度优先级，react更新优先级和调度优先级有着对应关系。
+  调度优先级分别是0-5，0代表没有，1代表立马调度，2代表用户行为调度，3代表一般的如render调度，4和5代表低优先级调度`)
+  logs === 0 && console.warn('当前初次渲染nextLanes为：', nextLanes,existingCallbackNode)
+  logs !== 0 && console.warn('当前更新渲染nextLanes为以及是否存在被中断任务：', nextLanes, existingCallbackNode)
   if (nextLanes === NoLanes) {
+    console.warn('下一更新优先级为0，是否存在被中断的任务',existingCallbackNode)
     // Special case: There's nothing to work on.
     if (existingCallbackNode !== null) {
       cancelCallback(existingCallbackNode);
@@ -764,10 +776,8 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
     root.callbackPriority = NoLane;
     return;
   }
-
   // We use the highest priority lane to represent the priority of the callback.
   const newCallbackPriority = getHighestPriorityLane(nextLanes);
-
   // Check if there's an existing task. We may be able to reuse it.
   //  事件函数中调用两次或者多次setstate时候existingCallbackPriority为上一次setstate时候的优先级，这时候直接return，不会向synqueue里面增加任务
   const existingCallbackPriority = root.callbackPriority;
@@ -795,6 +805,7 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
         );
       }
     }
+    console.warn('在一个事件函数中多次触发setstate')
     // The priority hasn't changed. We can reuse the existing task. Exit.
     return;
   }
@@ -806,7 +817,7 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
 
   // Schedule a new callback.
   let newCallbackNode;
-  console.log(newCallbackPriority, SyncLane, 'log: ensureRootIsScheduled newCallbackPriority, SyncLane')
+  console.log('**********下一任务的优先级************', newCallbackPriority)
   if (newCallbackPriority === SyncLane) {
     // Special case: Sync React callbacks are scheduled on a special
     // internal queue
@@ -870,17 +881,17 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
         schedulerPriorityLevel = NormalSchedulerPriority;
         break;
     }
-    console.log(schedulerPriorityLevel, 'log: ensureRootIsScheduled 进入scheduleCallback调度的优先级')
-    console.log('log: ensureRootIsScheduled 初次渲染或者newCallbackPriority !== SyncLane时ensureRootIsScheduled都会根据FiberRoot节点获取赋值nextLanes，再根据获取的nextLanes算出schedulerPriorityLevel优先级并调用scheduleCallback传入优先级和工作函数performConcurrentWorkOnRoot')
+    console.log('*****当前调度优先级为*****：', schedulerPriorityLevel)
     //调用调度更新
     newCallbackNode = scheduleCallback(
       schedulerPriorityLevel,
       performConcurrentWorkOnRoot.bind(null, root),
     );
   }
-  console.log(newCallbackNode, existingCallbackNode, 'log: ensure ************************')
+  console.warn('调度完后的callbackNode以及callbackPriority',newCallbackNode,newCallbackPriority)
   root.callbackPriority = newCallbackPriority;
   root.callbackNode = newCallbackNode;
+  logs = 1
 }
 
 // This is the entry point for every concurrent task, i.e. anything that
@@ -933,11 +944,10 @@ function performConcurrentWorkOnRoot(root, didTimeout) {
   // TODO: We only check `didTimeout` defensively, to account for a Scheduler
   // bug we're still investigating. Once the bug in Scheduler is fixed,
   // we can remove this, since we track expiration ourselves.
-  console.log(includesBlockingLane(root, lanes), includesExpiredLane(root, lanes),disableSchedulerTimeoutInWorkLoop,didTimeout)
   const shouldTimeSlice =
     !includesBlockingLane(root, lanes) &&
     !includesExpiredLane(root, lanes) &&
-    (disableSchedulerTimeoutInWorkLoop || !didTimeout);
+    (disableSchedulerTimeoutInWorkLoop || !didTimeout); // disableSchedulerTimeoutInWorkLoop = false
   let exitStatus = shouldTimeSlice
     ? renderRootConcurrent(root, lanes)
     : renderRootSync(root, lanes);
@@ -1707,7 +1717,6 @@ export function renderHasNotSuspendedYet(): boolean {
 function renderRootSync(root: FiberRoot, lanes: Lanes) {
   const prevExecutionContext = executionContext;
   executionContext |= RenderContext;
-  console.log(executionContext, NoContext, 'log: renderRootSync, executionContext, no')
   const prevDispatcher = pushDispatcher();
 
   // If the root or lanes have changed, throw out the existing stack
@@ -1784,8 +1793,11 @@ function renderRootSync(root: FiberRoot, lanes: Lanes) {
 // The work loop is an extremely hot path. Tell Closure not to inline it.
 /** @noinline */
 function workLoopSync() {
-  console.log(workInProgress, 'log: workLoopSync workInProgress')
-  console.log('log: workLoopSync  初次render由于优先级高，或者任务过期，都会调用同步更新，不会进行时间切片，都是调用workLoopSync,不管是同步还是异步都会while循环调用performUnitOfWork')
+  console.log('当前正在执行的fiber workInProgress', workInProgress)
+  console.log('初次render或者任务过期，都会调用同步的workLoop更新，不会进行时间切片，都是调用workLoopSync,不管是同步还是异步都会while循环调用performUnitOfWork')
+  console.error(`
+  workLoop主要是分三个阶段，第一个是beginWork，从hostRootFiber向下递归执。第二个通过completeWork向上递归到Host，最后在commit阶段提交突变
+  `)
   // Already timed out, so perform work without checking if we need to yield.
   while (workInProgress !== null) {
     performUnitOfWork(workInProgress);

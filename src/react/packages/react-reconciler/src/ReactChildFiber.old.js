@@ -1139,7 +1139,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     created.return = returnFiber;
     return created;
   }
-
+  // DIFF算法********************************************************************
   function reconcileSingleElement(
     returnFiber: Fiber,
     currentFirstChild: Fiber | null,
