@@ -1,4 +1,4 @@
-import { useEffect, useState, React, useLayoutEffect, useContext, createContext } from 'react';
+import { useEffect, useState, React, useLayoutEffect, useContext, createContext, useCallback } from 'react';
 // import * as React from 'react';
 import './App.css';
 import Button from './APP2';
@@ -137,11 +137,27 @@ function AppTest () {
     <div>
       <span>state1：{state}</span>
       <span>state2：{state2}</span>
-      <button onClick={click}>react事件</button>
+      <button onClick={click}>{state2}</button>
       <button onClick={time}>延迟事件</button>
+      <Component />
     </div>
   )
 }
 
+function Component () {
+  const [state, setstate] = useState('child state')
+  const callback = useCallback(() => {
+    setTimeout(() => {
+      alert(state)
+    }, 3000)
+  }, [state])
+  return (
+    <div>
+      <span>{state}</span>
+      <button onClick={() => setstate(Math.random())}>change state</button>
+      <button onClick={callback}>alert</button>
+    </div>
+  )
+}
 
 export default AppTest;

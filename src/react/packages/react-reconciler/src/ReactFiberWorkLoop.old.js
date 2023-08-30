@@ -2133,6 +2133,9 @@ function commitRootImpl(
   // TODO: Delete all other places that schedule the passive effect callback
   // They're redundant.
   // 表示当前渲染触发了被动渲染也就是flags为PassiveMask，也就是带有副作用effect的fiber，会新开调度执行也就是异步执行
+  console.log('完成diff算法后的虚拟dom：', finishedWork)
+  console.log('当前渲染触发了被动渲染也就是flags为PassiveMask，也就是带有副作用effect的fiber，会新开调度执行也就是异步执行')
+  console.log( PassiveMask, NoFlags)
   if (
     (finishedWork.subtreeFlags & PassiveMask) !== NoFlags ||
     (finishedWork.flags & PassiveMask) !== NoFlags
@@ -2185,6 +2188,7 @@ function commitRootImpl(
     // The first phase a "before mutation" phase. We use this phase to read the
     // state of the host tree right before we mutate it. This is where
     // getSnapshotBeforeUpdate is called.
+    console.error('commit的第一个阶段，这里主要处理class组件和hostRoot组件，因为只有他们两个组件才会带Snapshot的flags \n对于class组件会调用getSnapshotBeforeUpdate生命周期， hostRoot对清空容器内容，也就是#root里面的内容')
     // commit的第一个阶段，这里主要处理class组件和hostRoot组件，因为只有他们两个组件才会带Snapshot的flags
     // 对于class组件会调用getSnapshotBeforeUpdate生命周期， hostRoot对清空容器内容，也就是#root里面的内容
     const shouldFireAfterActiveInstanceBlur = commitBeforeMutationEffects(
@@ -2207,6 +2211,7 @@ function commitRootImpl(
     // The next phase is the mutation phase, where we mutate the host tree.
     // commit第二个阶段dom突变，这个阶段主要处理一些flags为ref，contextReset，ref，placement， update，deletion，hydrating的fiber
     // 最终都会体现到对dom的增删和插入移位上
+    console.error('commit第二个阶段dom突变，这个阶段主要处理一些flags为ref，contextReset，ref，placement， update，deletion，hydrating的fiber \n 最终都会体现到对dom的增删和插入移位上')
     commitMutationEffects(root, finishedWork, lanes);
     
     if (enableCreateEventHandleAPI) {
@@ -2221,6 +2226,7 @@ function commitRootImpl(
     // componentWillUnmount, but before the layout phase, so that the finished
     // work is current during componentDidMount/Update.
     // dom突变执行完成以后会替换当前root的current指向，达到更新页面dom效果
+    console.warn('dom突变执行完成以后会替换当前root的current指向，达到更新页面dom效果')
     root.current = finishedWork;
 
     // The next phase is the layout phase, where we call effects that read
