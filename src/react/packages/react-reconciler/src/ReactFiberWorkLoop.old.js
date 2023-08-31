@@ -746,7 +746,7 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
   const existingCallbackNode = root.callbackNode;
   // Check if any lanes are being starved by other work. If so, mark them as
   // expired so we know to work on those next.
-  // 检查有没有过期任务防止饿死
+  // 检查有没有过期任务，有的话就会标记到root.expiredLanes，防止饿死
   markStarvedLanesAsExpired(root, currentTime);
 
   // Determine the next lanes to work on, and their priority.
@@ -770,6 +770,7 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
     console.warn('下一更新优先级为0，是否存在被中断的任务',existingCallbackNode)
     // Special case: There's nothing to work on.
     if (existingCallbackNode !== null) {
+      console.log('中断之前存在的task')
       cancelCallback(existingCallbackNode);
     }
     root.callbackNode = null;
@@ -888,7 +889,7 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
       performConcurrentWorkOnRoot.bind(null, root),
     );
   }
-  console.warn('调度完后的callbackNode以及callbackPriority',newCallbackNode,newCallbackPriority)
+  console.warn('调度完后会scheduler会返回一个newTask，就是一个小定堆数据，如果这个newTask和root上之前存在的task一样，则表示中断本次任务，callbackNode以及callbackPriority',newCallbackNode,newCallbackPriority)
   root.callbackPriority = newCallbackPriority;
   root.callbackNode = newCallbackNode;
   logs = 1
@@ -1029,6 +1030,7 @@ function performConcurrentWorkOnRoot(root, didTimeout) {
   ensureRootIsScheduled(root, now());
   // 这里表示任务中断了会结合scheduleCallback中的workLoop中的const continuationCallback = callback(didUserCallbackTimeout)进行判断，如果continuationCallback为function表示中断
   // 其中callback就表示正在执行的任务，在执行之前的任务后如果返回一个function表示任务被中断了，就会把当前正在执行的task的callback赋值为被中断的函数，一般中断函数就是当前执行task的callback，方便重启
+  console.warn('root原有的task和执行调度返回的task', originalCallbackNode, root.callbackNode)
   if (root.callbackNode === originalCallbackNode) {
     console.log('****************************************任务被中断啦*********************************')
     // The task node scheduled for this root is the same one that's

@@ -39,7 +39,6 @@ function finishEventHandler() {
     // bails out of the update without touching the DOM.
     // TODO: Restore state in the microtask, after the discrete updates flush,
     // instead of early flushing them here.
-    debugger
     flushSyncImpl();
     restoreStateIfNeeded();
   }

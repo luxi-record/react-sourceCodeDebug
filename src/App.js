@@ -1,4 +1,4 @@
-import { useEffect, useState, React, useLayoutEffect, useContext, createContext, useCallback } from 'react';
+import { useEffect, useState, React, useLayoutEffect, useContext, createContext, useCallback, useTransition } from 'react';
 // import * as React from 'react';
 import './App.css';
 import Button from './APP2';
@@ -146,6 +146,8 @@ function AppTest () {
 
 function Component () {
   const [state, setstate] = useState('child state')
+  const [inp, setInp] = useState('input')
+  const [isPending, startTransition] = useTransition()
   const callback = useCallback(() => {
     setTimeout(() => {
       alert(state)
@@ -157,11 +159,20 @@ function Component () {
   const divClick = () => {
     console.log('div click')
   }
+  const changeInput = (e) => {
+    const val = e.target.value
+    setInp(val)
+    startTransition(() => {
+      setstate(Math.random())
+    })
+  }
   return (
     <div style={{border: 'solid 1px red'}} onClick={divClick}>
       <span onClick={spanClick}>{state}</span>
       <button onClick={() => setstate(Math.random())}>change state</button>
       <button onClick={callback}>alert</button>
+      <span>isPending:{`${isPending}`}</span>
+      <input value={inp} onChange={changeInput} />
     </div>
   )
 }

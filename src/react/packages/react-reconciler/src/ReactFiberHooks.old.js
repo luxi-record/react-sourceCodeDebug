@@ -385,7 +385,6 @@ export function renderWithHooks<Props, SecondArg>(
     ignorePreviousDependencies =
       current !== null && current.type !== workInProgress.type;
   }
-
   workInProgress.memoizedState = null;
   workInProgress.updateQueue = null;
   workInProgress.lanes = NoLanes;
