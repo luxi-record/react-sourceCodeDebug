@@ -227,6 +227,7 @@ function executeDispatch(
 ): void {
   const type = event.type || 'unknown-event';
   event.currentTarget = currentTarget;
+  console.log('事件的执行最终会调用invokeGuardedCallbackAndCatchFirstError，把事件函数的执行上下文置为undefined，这就是为什么在react事件中this为undefined，invoke主要就是包含错误抛出以及把syntheticBaseEvent合成事件对象传入')
   invokeGuardedCallbackAndCatchFirstError(type, listener, undefined, event);
   event.currentTarget = null;
 }
@@ -387,8 +388,8 @@ const listeningMarker =
     .slice(2);
 
 export function listenToAllSupportedEvents(rootContainerElement: EventTarget) {//事件注册
-  console.error(`这里先总结下React的事件，React会把所有的浏览器事件绑定到传入的container上面，如果传入的是注释标签就绑定在它父元素上面，
-  并且定义一个map映射表，把原生事件和react事件相对应，当触发一个事件的时候react会从触发的target向上到root递归收集相同react事件，
+  console.error(`这里先总结下React的事件，初始化时候React会把所有的浏览器事件绑定到传入的container上面，绑定的事件是一个带有优先级包装过的listenr。如果传入的是注释标签就绑定在它父元素上面，
+  并且定义一个map映射表，把原生事件和react事件相对应，当触发一个事件的时候实际是触发初始化时候绑定的listenr，执行这个listenr时会从触发的target向上到root递归收集相同react事件，
   放在一个listenrs数组中，React事件函数是通过优先级封装了一层，每个React事件有着不同的优先级，不同事件对应不同优先级，也对应着不同的事件对象syntheticBaseEvent，把收集到的事件通过batchUpdate触发事件`)
   if (!(rootContainerElement: any)[listeningMarker]) {
     (rootContainerElement: any)[listeningMarker] = true;

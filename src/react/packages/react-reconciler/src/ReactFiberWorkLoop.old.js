@@ -1795,9 +1795,10 @@ function renderRootSync(root: FiberRoot, lanes: Lanes) {
 function workLoopSync() {
   console.log('当前正在执行的fiber workInProgress', workInProgress)
   console.log('初次render或者任务过期，都会调用同步的workLoop更新，不会进行时间切片，都是调用workLoopSync,不管是同步还是异步都会while循环调用performUnitOfWork')
-  console.error(`
-  workLoop主要是分三个阶段，第一个是beginWork，从hostRootFiber向下递归执。第二个通过completeWork向上递归到Host，最后在commit阶段提交突变
-  `)
+  console.error(`workLoop主要是分三个阶段：
+  第一个是beginWork，从hostRootFiber向下递归创建或者复用fiber给fiber打上tag（这个tag就是对应的增删改）。
+  第二个通过completeWork向上递归到Host处理props创建dom和effectlist等，这个effectlist就是收集那些打上tag的fiber，方便在commit阶段直接遍历这个list执行更改
+  最后在commit阶段提交突变，遍历effectlist（增删改对应的fiber），执行effect`)
   // Already timed out, so perform work without checking if we need to yield.
   while (workInProgress !== null) {
     performUnitOfWork(workInProgress);
@@ -2052,7 +2053,8 @@ function commitRootImpl(
     // no more pending effects.
     // TODO: Might be better if `flushPassiveEffects` did not automatically
     // flush synchronous work at the end, to avoid factoring hazards like this.
-    // 这个函数很重要 清除被动的effect
+    // 这个函数很重要 清除effect
+    console.warn('提交阶段，先执行flushPassiveEffects执行effect任务，flushPassiveEffects这个函数里面会先执行effect的清除函数再执行effect')
     flushPassiveEffects();
   } while (rootWithPendingPassiveEffects !== null);
   flushRenderPhaseStrictModeWarningsInDEV();

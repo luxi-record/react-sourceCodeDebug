@@ -151,9 +151,15 @@ function Component () {
       alert(state)
     }, 3000)
   }, [state])
+  const spanClick = (e) => {
+    console.log('span click')
+  }
+  const divClick = () => {
+    console.log('div click')
+  }
   return (
-    <div>
-      <span>{state}</span>
+    <div style={{border: 'solid 1px red'}} onClick={divClick}>
+      <span onClick={spanClick}>{state}</span>
       <button onClick={() => setstate(Math.random())}>change state</button>
       <button onClick={callback}>alert</button>
     </div>

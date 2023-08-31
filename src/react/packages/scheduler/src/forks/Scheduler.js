@@ -223,7 +223,7 @@ function workLoop(hasTimeRemaining, initialTime) { //
         markTaskRun(currentTask, currentTime);
       }
       const continuationCallback = callback(didUserCallbackTimeout);// 这里就是react中performConcurrentWorkOnRoot函数的返回值
-      console.log('task任务是否被中断*******************', continuationCallback)
+      console.log('task任务是否被中断*******************', continuationCallback ? true : false)
       currentTime = getCurrentTime();
       if (typeof continuationCallback === 'function') {
         // 这里表示任务没完成被中断了，则将返回的函数作为新的回调在下一次循环执行
