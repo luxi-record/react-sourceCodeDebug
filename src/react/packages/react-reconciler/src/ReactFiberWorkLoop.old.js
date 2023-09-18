@@ -851,7 +851,11 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
           // or commit so we need to check against that.
           // 等待事件回调(原生事件的回调函数)函数触发完成以后才会进入flushSyncCallbacks刷新事件回调函数增加的更新queue
           if (executionContext === NoContext) {
-            console.log('log: ensureRootIsScheduled 等待事件回调函数触发完成以后才会进入flushSyncCallbacks刷新事件回调函数增加的更新queue，因为事件回调触发的时候是同步任务，而scheduleMicrotask是一个通过promise或者settimeout封装的异步任务')
+            console.error(`
+              当当前任务的优先级为最高优先级SyncLane也就是1的时候，会将任务performSyncWorkOnRoot放在一个队列里面，然后判断当前环境支不支持微任务
+              （queueMicrotask，如果不支持queueMicrotask，就判断支不支持promise，如果不支持promise就判断支不支持settimeout），
+              这三种方式只要支持一种就通过这种方式异步执行更新任务，如果都不支持，那就调度执行更新任务，并且把当前调度的优先级置为最高。
+            `)
             // It's only safe to do this conditionally because we always
             // check for pending work before we exit the task.
             flushSyncCallbacks();

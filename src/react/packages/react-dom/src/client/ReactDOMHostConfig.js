@@ -368,6 +368,12 @@ export function createTextInstance(
 }
 
 export function getCurrentEventPriority(): * {
+  console.error(`当事件触发更新后，react会去获取当前优先级，这里分为三种情况
+    1:reacr事件。在初始应用时候react会绑定所有浏览器事件到root上，绑定的事件listener是一个带有优先级的函数，所以react事件触发更新会根据这个listener获取到对应优先级，（如果是react事件是不会触发当前log）
+    2:原生事件。原生事件的listener是开发者自定义所以不会包含优先级，这时候react会通过window.event获取触发事件的类型，再通过事件类型和优先级映射关系获取优先级，每种事件类型对应不同优先级
+    3:异步事件。这里分为宏任务和微任务，由于微任务（Promise.reslove().then(() => setstate())）是在当前宏任务执行完以后执行，所以在当前执行上下文中还能获取到window.event，所以微任务和第二种情况差不多。
+    宏任务由于是下一帧执行的任务，在这个执行上下文中获取不到window.event，所以宏任务触发的更新的优先级都是DefaultEventPriority为16
+  `)
   const currentEvent = window.event;
   if (currentEvent === undefined) {
     return DefaultEventPriority;

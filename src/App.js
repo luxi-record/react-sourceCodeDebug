@@ -113,6 +113,7 @@ function AppTest () {
   const [state2, setState2] = useState('state2')
   useEffect(() => {
     console.log('我是没有依赖的useEffect')
+    document.getElementById('but').addEventListener('click', navClick)
     return () => console.log('我是没有依赖的useEffect的清除函数')
   }, [])
   useLayoutEffect(() => {
@@ -127,6 +128,10 @@ function AppTest () {
     setState('change1')
     setState2('change2')
   }
+  const navClick = () => {
+    setState('change1')
+    setState2('change2')
+  }
   const time = () => {
     setTimeout(() => {
       setState('changeTime')
@@ -137,7 +142,8 @@ function AppTest () {
     <div>
       <span>state1：{state}</span>
       <span>state2：{state2}</span>
-      <button onClick={click}>{state2}</button>
+      <button onClick={click}>react事件</button>
+      <button id='but'>原生事件</button>
       <button onClick={time}>延迟事件</button>
       <Component />
     </div>
